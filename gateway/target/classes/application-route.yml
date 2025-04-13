@@ -1,0 +1,16 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-route
+          uri: lb://service-order #负载均衡转给order-server
+          predicates:
+            - Path=/api/order/**
+        - id: customer-route
+          uri: lb://service-customer #负载均衡转给customer-server
+          predicates:
+            - Path=/api/customer/**
+        - id: product-route
+          uri: lb://service-product #负载均衡转给product-server
+          predicates:
+            - Path=/api/product/**

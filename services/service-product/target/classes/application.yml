@@ -1,0 +1,127 @@
+server:
+  port: 9000
+spring:
+  rabbitmq:
+    addresses: 192.168.145.129:5672,192.168.145.129:5673  # 所有节点地址
+    username: admin
+    password: admin
+    virtual-host: /
+    connection-timeout: 5000
+    # 启用自动重连
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+  application:
+    name: service-product
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.145.129:8848
+      config: #配置中心
+        server-addr: 192.168.145.129:8848  # Nacos 2.x 地址
+        file-extension: yaml          # 配置文件格式
+        namespace: public             # 命名空间
+        group: DEFAULT_GROUP          # 分组名
+    stream:
+      bindings:
+        orderConsumer-in-0: # 通道名称格式：{函数名}-in-0
+          destination: order.exchange  # 与生产者交换机同名
+          group: product-service  # 必须设置消费者组（队列名称=destination.group）
+      rabbit:
+        bindings:
+          orderConsumer-in-0:
+            consumer:
+              exchange-type: direct
+              binding-routing-key: aaa
+    function:
+      definition: orderConsumer  # 必须与@Bean方法名一致
+  # 关键配置：显式声明从 Nacos 导入配置
+  config:
+    import:
+      - nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
+  datasource:
+    url: jdbc:mysql://192.168.145.129:3306/my_test?useSSL=false&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      database: 0
+      password: redis
+      sentinel:
+        master: mymaster # 必须与哨兵配置中的逻辑名一致（如 sentinel monitor mymaster ...）
+        nodes:
+          - 192.168.145.129:26379
+          - 192.168.145.129:26380
+          - 192.168.145.129:26381
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+        shutdown-timeout: 100ms
+#  shardingsphere:
+#    # 数据源配置
+#    datasource:
+#      names: ds
+#      ds:
+#        type: com.zaxxer.hikari.HikariDataSource
+#        driver-class-name: com.mysql.cj.jdbc.Driver
+#        url: jdbc:mysql://192.168.145.129:3306/my_test?useSSL=false&characterEncoding=utf8
+#        username: root
+#        password: root
+#    # 分片规则配置
+#    rules:
+#      sharding:
+#        # 配置分表规则
+#        tables:
+#          product:
+#            # 实际数据节点，格式为: 数据源名.表名_分片编号
+#            actual-data-nodes: ds.product_$->{0..1}
+#            # 表分片策略
+#            table-strategy:
+#              standard:
+#                # 分片列
+#                sharding-column: id
+#                # 分片算法名称
+#                sharding-algorithm-name: product-mod
+#        # 定义分片算法
+#        sharding-algorithms:
+#          product-mod:
+#            type: MOD
+#            props:
+#              sharding-count: 2  # 分片数量
+#
+#    # 其他属性配置
+#    props:
+#      sql-show: true  # 显示SQL日志，方便调试
+dubbo:
+  application:
+    name: ${spring.application.name}-d
+    qos-port: 19000
+  registry:
+    address: nacos://192.168.145.129:8848
+  protocol:
+    name: dubbo
+    port: 29000
+  scan:
+    base-packages: com.product.service
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*.xml # Mapper XML 文件路径
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开启 SQL 日志
+
+seata:
+  registry:
+    type: nacos # 使用 Nacos 作为注册中心
+    nacos:
+      server-addr: 192.168.145.129:8848 # Nacos 地址
+      namespace: public
+      cluster: default
+      username: nacos
+      password: nacos

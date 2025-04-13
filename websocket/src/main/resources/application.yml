@@ -1,0 +1,23 @@
+server:
+  port: 9100
+spring:
+  application:
+    name: websocket
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.145.129:8848
+  datasource:
+    url: jdbc:mysql://192.168.145.129:3306/my_test?useSSL=false&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+dubbo:
+  application:
+    name: ${spring.application.name}-d
+    qos-port: 19100
+  registry:
+    address: nacos://192.168.145.129:8848
+  protocol:
+    name: dubbo
+    port: 29100

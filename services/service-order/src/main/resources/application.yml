@@ -1,0 +1,117 @@
+server:
+  port: 8000
+spring:
+  rabbitmq:
+    addresses: 192.168.145.129:5672,192.168.145.129:5673  # 所有节点地址
+    username: admin
+    password: admin
+    virtual-host: /
+    connection-timeout: 5000
+    # 启用自动重连
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+  application:
+    name: service-order
+  cloud:
+    sentinel:
+      transport:
+        dashboard: 192.168.145.129:8858 # Sentinel 控制台地址
+      datasource:
+        ds1:
+          nacos:
+            server-addr: 192.168.145.129:8848
+            dataId: ${spring.application.name}
+            groupId: DEFAULT_GROUP
+            data-type: json
+            rule-type: flow
+    nacos:
+      discovery:
+        server-addr: 192.168.145.129:8848
+      config: #配置中心
+        server-addr: 192.168.145.129:8848  # Nacos 2.x 地址
+        file-extension: yaml          # 配置文件格式
+        namespace: public             # 命名空间
+        group: DEFAULT_GROUP          # 分组名
+    stream:
+      bindings:
+        orderProducer-out-0: # 通道名称格式：{函数名}-out-0
+          destination: order.exchange  # 交换机名称
+      rabbit:
+        bindings:
+          orderProducer-out-0:
+            producer:
+              exchange-type: direct  # 交换机类型（direct/topic等）
+              routing-key: aaa
+    function:
+      definition: orderProducer  # 必须与@Bean方法名一致
+  # 关键配置：显式声明从 Nacos 导入配置
+  config:
+    import:
+      - nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
+
+  datasource:
+    url: jdbc:mysql://192.168.145.129:3306/my_test?useSSL=false&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      database: 0
+      password: redis
+      sentinel:
+        master: mymaster # 必须与哨兵配置中的逻辑名一致（如 sentinel monitor mymaster ...）
+        nodes:
+          - 192.168.145.129:26379
+          - 192.168.145.129:26380
+          - 192.168.145.129:26381
+      lettuce:
+#        read-from: REPLICA_PREFERRED  # 优先从副本节点读取
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+        shutdown-timeout: 100ms
+dubbo:
+  application:
+    name: ${spring.application.name}-d
+    qos-port: 18000
+  registry:
+    address: nacos://192.168.145.129:8848
+  protocol:
+    name: dubbo
+    port: 28000
+  scan:
+    base-packages: com.order.service
+#  consumer:
+#    loadbalance: consistenthash # 消费者负载均衡
+#  provider:
+#    loadbalance: random # 提供者负载均衡
+  # random	随机（默认策略），按权重随机分配请求
+  # roundrobin	轮询，按权重轮询分配请求。
+  # leastactive	最少活跃调用，优先调用活跃数最小的服务提供者。
+  # consistenthash	一致性哈希，相同参数的请求总是发送到同一个服务提供者。
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*.xml # Mapper XML 文件路径
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开启 SQL 日志
+    cache-enabled: true # 开启二级缓存
+    map-underscore-to-camel-case:
+
+seata:
+  registry:
+    type: nacos # 使用 Nacos 作为注册中心
+    nacos:
+      server-addr: 192.168.145.129:8848 # Nacos 地址
+      namespace: public
+      cluster: default
+      username: nacos
+      password: nacos
+logging:
+  level:
+    io.lettuce.core: debug
