@@ -32,7 +32,7 @@ public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> i
 
     @Override
     public CustomerDTO getCustomerById(Integer id) {
-
+        // test add
         Customer customer = customerMapper.selectById(id);
         if (Objects.nonNull(customer)) {
             CustomerDTO customerDTO = modelMapper.map(customer, CustomerDTO.class);
