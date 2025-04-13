@@ -8,12 +8,9 @@ import customer.dto.CustomerDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.annotation.Resource;
-import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -32,7 +29,7 @@ public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> i
 
     @Override
     public CustomerDTO getCustomerById(Integer id) {
-        // test add
+        // test add 2
         Customer customer = customerMapper.selectById(id);
         if (Objects.nonNull(customer)) {
             CustomerDTO customerDTO = modelMapper.map(customer, CustomerDTO.class);
